@@ -145,5 +145,8 @@
       "enabled": true
     }
   ],
-  "request_timeout_seconds": 15
+  "request_timeout_seconds": 15,
+  "version": "3.1",
+  "automatic_checks": false,
+  "x_enabled": false
 }

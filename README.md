@@ -31,3 +31,14 @@ Deze worden niet naar GitHub gestuurd:
 ## Updates
 
 Na een echte Git-clone kun je `update_via_github.bat` gebruiken.
+
+
+## Versie 3.1
+
+- Geen automatische controles meer.
+- Gebruik de knop **Update nieuws**.
+- TukkerScout onthoudt alle gevonden artikelen lokaal.
+- Bovenaan staan alleen berichten die bij de laatste handmatige update nieuw waren.
+- Eerdere berichten blijven onder **Onthouden berichten** zichtbaar.
+- Optionele X-integratie via de officiële X API.
+- De X Bearer Token wordt uitsluitend lokaal opgeslagen in `data/x_config.json`.

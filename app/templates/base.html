@@ -1,7 +1,49 @@
-<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TukkerScout 3.0</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
-<body><header class="topbar"><div><h1><a href="{{ url_for('dashboard') }}">TukkerScout 3.0</a></h1><p>FC Twente eerste elftal</p></div>
-<nav><a href="{{ url_for('dashboard') }}">Nieuws</a><a href="{{ url_for('persons_page') }}">Personen</a><a href="{{ url_for('source_page') }}">Bronnen</a></nav></header>
-<main class="container">{% with messages=get_flashed_messages() %}{% if messages %}<div class="flash">{{messages[0]}}</div>{% endif %}{% endwith %}{% block content %}{% endblock %}</main>
-<script>async function checkNow(btn){btn.disabled=true;btn.textContent="Bezig…";try{const r=await fetch("{{ url_for('check') }}",{method:"POST",headers:{"X-Requested-With":"fetch"}});const x=await r.json();if(!x.ok)throw new Error(x.message||"Controle mislukt");btn.textContent=x.new+" nieuw";setTimeout(()=>location.reload(),700)}catch(e){alert(e.message);location.reload()}}</script>
-</body></html>
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TukkerScout 3.1</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <h1><a href="{{ url_for('dashboard') }}">TukkerScout 3.1</a></h1>
+    <p>FC Twente eerste elftal</p>
+  </div>
+  <nav>
+    <a href="{{ url_for('dashboard') }}">Nieuws</a>
+    <a href="{{ url_for('persons_page') }}">Personen</a>
+    <a href="{{ url_for('source_page') }}">Bronnen</a>
+    <a href="{{ url_for('x_page') }}">X</a>
+  </nav>
+</header>
+<main class="container">
+{% with messages=get_flashed_messages() %}
+{% if messages %}<div class="flash">{{messages[0]}}</div>{% endif %}
+{% endwith %}
+{% block content %}{% endblock %}
+</main>
+<script>
+async function checkNow(btn){
+  btn.disabled=true;
+  btn.textContent="Nieuws wordt bijgewerkt…";
+  try{
+    const response=await fetch(
+      "{{ url_for('check') }}",
+      {method:"POST",headers:{"X-Requested-With":"fetch"}}
+    );
+    const result=await response.json();
+    if(!result.ok) throw new Error(result.message||"Nieuwsupdate mislukt");
+    btn.textContent=result.new+" nieuwe berichten";
+    setTimeout(()=>location.reload(),800);
+  }catch(error){
+    alert(error.message);
+    btn.disabled=false;
+    btn.textContent="Update nieuws";
+  }
+}
+</script>
+</body>
+</html>

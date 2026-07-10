@@ -7,3 +7,49 @@ input,select,textarea,button{font:inherit}input,select,textarea{padding:9px;bord
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:13px;margin-top:18px}.source-card{padding:18px;display:flex;gap:12px}.source-card h3{margin:0 0 6px}.source-card a{color:var(--dark);word-break:break-all}.dot{width:13px;height:13px;border-radius:50%;margin-top:5px}.ok{background:#16a34a}.bad{background:#dc2626}.unknown{background:#9ca3af}
 .table-wrap{overflow:auto;margin-top:16px;background:#fff;border-radius:12px}table{width:100%;border-collapse:collapse}th,td{padding:12px;border-bottom:1px solid #eee;text-align:left}.row-form{display:contents}.danger{background:#fff;color:#b91c1c;border:1px solid #fecaca;border-radius:7px;padding:7px 10px}.flash{padding:12px;margin-bottom:14px}.empty{padding:20px;margin-top:16px}
 @media(max-width:700px){.topbar,.hero{flex-direction:column;align-items:flex-start;gap:14px}}
+
+
+.update-button {
+    font-size: 17px;
+    padding: 13px 20px;
+}
+
+.section-title {
+    margin: 26px 0 8px;
+}
+
+.section-title h2 {
+    margin-bottom: 4px;
+}
+
+.section-title p {
+    color: var(--muted);
+    margin-top: 0;
+}
+
+.new-card {
+    border-left: 6px solid var(--red);
+}
+
+.new-pill {
+    background: var(--red);
+    color: white;
+    font-weight: bold;
+}
+
+.memory-heading {
+    margin-top: 38px;
+    padding-top: 10px;
+    border-top: 1px solid #d1d5db;
+}
+
+.block-label {
+    display: grid;
+    gap: 7px;
+    margin-bottom: 16px;
+}
+
+.block-label input,
+.block-label textarea {
+    width: 100%;
+}
