@@ -1,14 +1,50 @@
-@echo off
-cd /d "%~dp0"
-title TukkerScout 3.0 installeren
-echo TukkerScout 3.0 wordt geinstalleerd...
-if not exist ".venv\Scripts\python.exe" (
-  py -3.14 -m venv .venv 2>nul
-  if errorlevel 1 python -m venv .venv
-)
-call ".venv\Scripts\activate.bat"
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-echo.
-echo Installatie gereed.
-pause
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h2>X-bronnen</h2>
+    <p>Volg gekozen accounts wanneer je handmatig op Update nieuws klikt.</p>
+  </div>
+</section>
+
+<section class="panel">
+  <h3>X API instellen</h3>
+  <p class="help">
+    Hiervoor is een officiële X API Bearer Token nodig.
+    De token wordt alleen lokaal in de map data opgeslagen en niet naar GitHub gestuurd.
+  </p>
+
+  <form method="post">
+    <label class="block-label">
+      Bearer Token
+      <input
+        type="password"
+        name="bearer_token"
+        value="{{x_config.bearer_token}}"
+        placeholder="Plak hier je X API Bearer Token"
+      >
+    </label>
+
+    <label class="block-label">
+      Accounts, één per regel
+      <textarea
+        name="accounts"
+        rows="10"
+        placeholder="fctwente&#10;LeonTenVoorde&#10;vanwissing"
+      >{% for account in x_config.accounts %}@{{account}}
+{% endfor %}</textarea>
+    </label>
+
+    <button class="primary">X-instellingen opslaan</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h3>Hoe het werkt</h3>
+  <p>
+    TukkerScout zoekt bij iedere handmatige nieuwsupdate naar recente posts
+    van deze accounts. De eerste controle geldt als startbestand; daarna worden
+    alleen nog niet eerder opgeslagen posts als nieuw getoond.
+  </p>
+</section>
+{% endblock %}
