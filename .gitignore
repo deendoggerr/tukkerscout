@@ -1,7 +1,11 @@
 .venv/
-data/
-logs/
 __pycache__/
 *.pyc
-.env
+data/*.db
+data/*.sqlite
+logs/
 config.local.json
+.env
+.DS_Store
+Thumbs.db
+data/x_config.json
