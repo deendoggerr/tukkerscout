@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-title TukkerScout 2.4
+title TukkerScout 3.0
 if not exist ".venv\Scripts\python.exe" (
   echo Start eerst installeren.bat
   pause

@@ -1,5 +1,5 @@
 from __future__ import annotations
-import hashlib, json, logging, re, sqlite3, threading, time
+import hashlib, json, logging, re, sqlite3, threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, urldefrag
@@ -11,7 +11,7 @@ DATA_DIR = BASE_DIR / "data"
 LOG_DIR = BASE_DIR / "logs"
 DB_PATH = DATA_DIR / "tukkerscout.db"
 CONFIG_PATH = BASE_DIR / "config.json"
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36 TukkerScout/2.4"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36 TukkerScout/3.0"
 
 CHECK_LOCK = threading.Lock()
 STATUS = {"running":False,"last_started":None,"last_finished":None,"last_error":None,"next_check":None}
@@ -25,7 +25,6 @@ CATEGORY_RULES = [
  ("Interview",["zegt","vertelt","interview","reactie","spreekt","persconferentie"]),
  ("Clubnieuws",["directeur","staf","trainer","technische staf","clubleiding","bestuur"])
 ]
-
 STOPWORDS={"de","het","een","en","van","voor","met","naar","bij","op","in","uit","is","zijn","dat","dit","die","als","om","te","na","over","fc","twente","tukkers","nieuws","krijgt","heeft","komt","kan","wordt","wil","weer","tegen","door"}
 
 def setup_logging():
@@ -50,13 +49,9 @@ def connect_db():
       relevant_count INTEGER NOT NULL DEFAULT 0,new_count INTEGER NOT NULL DEFAULT 0,
       ok INTEGER NOT NULL DEFAULT 1,message TEXT)""")
     conn.execute("""CREATE TABLE IF NOT EXISTS persons(
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      role TEXT NOT NULL,
-      active INTEGER NOT NULL DEFAULT 1,
-      follow INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )""")
+      id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,role TEXT NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,follow INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
     conn.commit()
     return conn
 
@@ -84,17 +79,16 @@ def domain_allowed(url,domains):
 def person_terms():
     conn=connect_db()
     try:
-        rows=conn.execute("SELECT name FROM persons WHERE active=1 AND follow=1 ORDER BY name").fetchall()
+        rows=conn.execute("SELECT name FROM persons WHERE active=1 AND follow=1").fetchall()
         terms=[]
         for row in rows:
             name=row["name"].strip()
             if not name: continue
             terms.append(name.lower())
-            parts=[p for p in re.split(r"\s+",name) if p]
+            parts=name.split()
             if len(parts)>=2:
                 surname=" ".join(parts[-2:]) if parts[-2].lower() in {"van","de","der","den","ten","ter"} else parts[-1]
-                if len(surname)>=4:
-                    terms.append(surname.lower())
+                if len(surname)>=4: terms.append(surname.lower())
         return sorted(set(terms))
     finally:
         conn.close()
@@ -107,7 +101,8 @@ def relevant(title,source,config):
     return any(term in low for term in person_terms())
 
 def fetch_site(source,config):
-    r=requests.get(source["url"],headers={"User-Agent":USER_AGENT,"Accept-Language":"nl-NL,nl;q=0.9"},timeout=int(config.get("request_timeout_seconds",15)))
+    timeout=int(config.get("request_timeout_seconds",15))
+    r=requests.get(source["url"],headers={"User-Agent":USER_AGENT,"Accept-Language":"nl-NL,nl;q=0.9"},timeout=timeout)
     r.raise_for_status()
     soup=BeautifulSoup(r.text,"html.parser")
     now=datetime.now().astimezone().isoformat(timespec="seconds")
@@ -142,7 +137,8 @@ def save_articles(conn,articles,baseline):
                          (a["source"],a["title"],a["url"],a["found_at"],a["priority"],a["urgency"],a["category"],a["fingerprint"],1 if baseline else 0,"Startbestand" if baseline else "Nieuw"))
             if not baseline:new.append(a)
         except sqlite3.IntegrityError: pass
-    conn.commit(); return new
+    conn.commit()
+    return new
 
 def record_run(conn,source,relevant_count,new_count,ok,message=""):
     conn.execute("INSERT INTO source_runs(source,checked_at,relevant_count,new_count,ok,message) VALUES(?,?,?,?,?,?)",
@@ -151,7 +147,7 @@ def record_run(conn,source,relevant_count,new_count,ok,message=""):
 
 def run_check():
     if not CHECK_LOCK.acquire(blocking=False): return {"ok":False,"message":"Er loopt al een controle."}
-    STATUS["running"]=True; STATUS["last_started"]=datetime.now().astimezone().isoformat(timespec="seconds")
+    STATUS["running"]=True
     total_new=0
     try:
         config=load_config(); conn=connect_db()
@@ -164,15 +160,14 @@ def run_check():
                     new=save_articles(conn,arts,baseline)
                     record_run(conn,source["name"],len(arts),len(new),True)
                     total_new+=len(new)
-                    logging.info("%s: %d relevant, %d nieuw.",source["name"],len(arts),len(new))
-                except Exception as exc:
+                except requests.RequestException as exc:
                     record_run(conn,source["name"],0,0,False,str(exc))
-                    logging.warning("Bron %s tijdelijk overgeslagen: %s", source["name"], exc)
         finally: conn.close()
         STATUS["last_finished"]=datetime.now().astimezone().isoformat(timespec="seconds")
         return {"ok":True,"new":total_new}
     finally:
-        STATUS["running"]=False; CHECK_LOCK.release()
+        STATUS["running"]=False
+        CHECK_LOCK.release()
 
 def scheduler_loop(stop_event):
     while not stop_event.is_set():
@@ -201,7 +196,7 @@ def group_similar(rows):
 def get_groups(hours=48):
     conn=connect_db()
     try:
-        rows=conn.execute("SELECT * FROM articles WHERE found_at>=? AND is_baseline=0 ORDER BY urgency DESC,id DESC",(cutoff(hours),)).fetchall()
+        rows=conn.execute("SELECT * FROM articles WHERE found_at>=? ORDER BY urgency DESC,id DESC",(cutoff(hours),)).fetchall()
         return group_similar(rows)
     finally: conn.close()
 
@@ -214,7 +209,7 @@ def sources_status():
         return out
     finally: conn.close()
 
-def list_persons(q="", role="", active="", follow=""):
+def list_persons(q="",role="",active="",follow=""):
     conn=connect_db()
     try:
         sql="SELECT * FROM persons WHERE 1=1"; params=[]
@@ -225,6 +220,11 @@ def list_persons(q="", role="", active="", follow=""):
         sql+=" ORDER BY role,name"
         return conn.execute(sql,params).fetchall()
     finally: conn.close()
+
+def count_persons():
+    conn=connect_db()
+    try:return conn.execute("SELECT COUNT(*) n FROM persons").fetchone()["n"]
+    finally:conn.close()
 
 def add_person(name,role,active,follow):
     name=normalize_title(name)
@@ -249,20 +249,57 @@ def delete_person(person_id):
         conn.commit()
     finally: conn.close()
 
-def bulk_add_persons(text,default_role="Speler"):
-    names=[]
+def parse_names(text):
+    names=[]; seen=set()
     for line in text.splitlines():
         name=normalize_title(line)
-        if name and name.lower() not in {"naam","speler","trainer","staf"}:
-            names.append(name)
-    conn=connect_db(); added=0; skipped=0
+        if not name: continue
+        key=name.casefold()
+        if key not in seen:
+            names.append(name); seen.add(key)
+    return names
+
+def bulk_add_persons(text):
+    names=parse_names(text); added=skipped=0
+    conn=connect_db()
     try:
         for name in names:
             try:
-                conn.execute("INSERT INTO persons(name,role,active,follow) VALUES(?,?,1,1)",(name,default_role))
+                conn.execute("INSERT INTO persons(name,role,active,follow) VALUES(?, 'Speler',1,1)",(name,))
                 added+=1
-            except sqlite3.IntegrityError:
-                skipped+=1
+            except sqlite3.IntegrityError: skipped+=1
         conn.commit()
     finally: conn.close()
     return added,skipped
+
+def compare_player_selection(text):
+    incoming=parse_names(text)
+    incoming_map={n.casefold():n for n in incoming}
+    conn=connect_db()
+    try:
+        current=[r["name"] for r in conn.execute("SELECT name FROM persons WHERE role='Speler' AND active=1").fetchall()]
+    finally: conn.close()
+    current_map={n.casefold():n for n in current}
+    return {
+        "new":sorted(incoming_map[k] for k in incoming_map.keys()-current_map.keys()),
+        "missing":sorted(current_map[k] for k in current_map.keys()-incoming_map.keys()),
+        "unchanged":sorted(incoming_map[k] for k in incoming_map.keys()&current_map.keys()),
+        "incoming":incoming
+    }
+
+def apply_player_selection(text):
+    result=compare_player_selection(text)
+    incoming_keys={n.casefold() for n in result["incoming"]}
+    conn=connect_db()
+    try:
+        for name in result["new"]:
+            try:
+                conn.execute("INSERT INTO persons(name,role,active,follow) VALUES(?, 'Speler',1,1)",(name,))
+            except sqlite3.IntegrityError:
+                conn.execute("UPDATE persons SET role='Speler',active=1,follow=1 WHERE lower(name)=lower(?)",(name,))
+        for row in conn.execute("SELECT id,name FROM persons WHERE role='Speler' AND active=1").fetchall():
+            if row["name"].casefold() not in incoming_keys:
+                conn.execute("UPDATE persons SET active=0 WHERE id=?",(row["id"],))
+        conn.commit()
+    finally: conn.close()
+    return result
