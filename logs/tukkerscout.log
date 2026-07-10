@@ -1,0 +1,13 @@
+2026-07-10 21:47:18,306 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8765
+2026-07-10 21:47:18,307 | INFO | [33mPress CTRL+C to quit[0m
+2026-07-10 21:47:19,960 | INFO | 127.0.0.1 - - [10/Jul/2026 21:47:19] "GET / HTTP/1.1" 200 -
+2026-07-10 21:47:20,082 | INFO | 127.0.0.1 - - [10/Jul/2026 21:47:20] "GET /static/style.css HTTP/1.1" 200 -
+2026-07-10 21:47:28,587 | INFO | 127.0.0.1 - - [10/Jul/2026 21:47:28] "GET /persons HTTP/1.1" 200 -
+2026-07-10 21:47:28,606 | INFO | 127.0.0.1 - - [10/Jul/2026 21:47:28] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2026-07-10 21:52:13,419 | INFO | 127.0.0.1 - - [10/Jul/2026 21:52:13] "GET / HTTP/1.1" 200 -
+2026-07-10 21:52:13,445 | INFO | 127.0.0.1 - - [10/Jul/2026 21:52:13] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2026-07-10 21:52:16,906 | INFO | 127.0.0.1 - - [10/Jul/2026 21:52:16] "GET /persons HTTP/1.1" 200 -
+2026-07-10 21:52:16,938 | INFO | 127.0.0.1 - - [10/Jul/2026 21:52:16] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2026-07-10 21:53:21,310 | INFO | 127.0.0.1 - - [10/Jul/2026 21:53:21] "GET /persons HTTP/1.1" 200 -
+2026-07-10 21:53:21,353 | INFO | 127.0.0.1 - - [10/Jul/2026 21:53:21] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
