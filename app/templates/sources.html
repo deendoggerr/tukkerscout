@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block content %}
+<section class="hero"><div><h2>Broncontrole</h2><p>Groen is goed. Rood betekent dat alleen die bron aandacht nodig heeft.</p></div><button class="primary" onclick="checkNow(this)">Controleren</button></section>
+<div class="grid">{% for item in sources %}<article class="source-card"><span class="dot {% if not item.last %}unknown{% elif item.last['ok'] %}ok{% else %}bad{% endif %}"></span><div><h3>{{item.config.name}}</h3><a href="{{item.config.url}}" target="_blank">{{item.config.url}}</a>{% if item.last %}<p>{{item.last['checked_at']|prettytime}} · {{item.last['relevant_count']}} relevant · {{item.last['new_count']}} nieuw</p>{% else %}<p>Nog niet gecontroleerd.</p>{% endif %}</div></article>{% endfor %}</div>
+{% endblock %}

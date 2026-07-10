@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% block content %}
+<section class="hero"><div><h2>Personen</h2><p>Deze namen worden automatisch als zoektermen gebruikt.</p></div></section>
+
+<section class="panel">
+<h3>Lijst plakken</h3>
+<form method="post">
+<input type="hidden" name="action" value="bulk">
+<textarea name="bulk_text" rows="8" placeholder="Plak hier één naam per regel"></textarea>
+<select name="default_role"><option>Speler</option><option>Trainer</option><option>Staf</option><option>Technisch directeur</option><option>Algemeen directeur</option></select>
+<button class="primary">Namen toevoegen</button>
+</form>
+</section>
+
+<section class="panel">
+<h3>Persoon toevoegen</h3>
+<form method="post" class="inline-form">
+<input type="hidden" name="action" value="add">
+<input name="name" placeholder="Naam" required>
+<select name="role"><option>Speler</option><option>Trainer</option><option>Staf</option><option>Technisch directeur</option><option>Algemeen directeur</option></select>
+<label><input type="checkbox" name="active" value="1" checked> Actief</label>
+<label><input type="checkbox" name="follow" value="1" checked> Volgen</label>
+<button class="primary">Toevoegen</button>
+</form>
+</section>
+
+<form class="filters" method="get">
+<input name="q" value="{{q}}" placeholder="Zoek naam">
+<select name="role"><option value="">Alle rollen</option>{% for r in ["Speler","Trainer","Staf","Technisch directeur","Algemeen directeur"] %}<option value="{{r}}" {% if role==r %}selected{% endif %}>{{r}}</option>{% endfor %}</select>
+<select name="active"><option value="">Actief: alles</option><option value="1" {% if active=="1" %}selected{% endif %}>Actief</option><option value="0" {% if active=="0" %}selected{% endif %}>Niet actief</option></select>
+<select name="follow"><option value="">Volgen: alles</option><option value="1" {% if follow=="1" %}selected{% endif %}>Volgen</option><option value="0" {% if follow=="0" %}selected{% endif %}>Niet volgen</option></select>
+<button>Filteren</button>
+</form>
+
+<div class="table-wrap"><table><thead><tr><th>Naam</th><th>Rol</th><th>Actief</th><th>Volgen</th><th></th></tr></thead><tbody>
+{% for p in persons %}
+<tr><td>{{p['name']}}</td><td>
+<form method="post" action="{{url_for('person_update',person_id=p['id'])}}" class="row-form">
+<select name="role">{% for r in ["Speler","Trainer","Staf","Technisch directeur","Algemeen directeur"] %}<option value="{{r}}" {% if p['role']==r %}selected{% endif %}>{{r}}</option>{% endfor %}</select>
+</td><td><input type="checkbox" name="active" value="1" {% if p['active'] %}checked{% endif %}></td>
+<td><input type="checkbox" name="follow" value="1" {% if p['follow'] %}checked{% endif %}></td>
+<td><button>Opslaan</button></form>
+<form method="post" action="{{url_for('person_delete',person_id=p['id'])}}" onsubmit="return confirm('Verwijderen?')"><button class="danger">Verwijderen</button></form></td></tr>
+{% else %}<tr><td colspan="5">Nog geen personen toegevoegd.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

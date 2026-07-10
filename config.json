@@ -1,0 +1,149 @@
+{
+  "check_interval_minutes": 10,
+  "default_window_hours": 48,
+  "first_run_silent": true,
+  "open_browser_on_start": true,
+  "host": "127.0.0.1",
+  "port": 8765,
+  "strict_mode": true,
+  "club_terms": [
+    "fc twente",
+    "f.c. twente",
+    "de grolsch veste",
+    "grolsch veste",
+    "de tukkers"
+  ],
+  "exclude_terms": [
+    "universiteit twente",
+    "utwente",
+    "veiligheidsregio twente",
+    "regio twente",
+    "twente airport",
+    "twente milieu",
+    "politie twente",
+    "brandweer twente",
+    "gemeente enschede",
+    "gemeente hengelo",
+    "gemeente almelo",
+    "jong fc twente",
+    "fc twente vrouwen",
+    "vrouwen fc twente"
+  ],
+  "sources": [
+    {
+      "name": "FC Twente",
+      "url": "https://fctwente.nl/teams/eerste-selectie/nieuws",
+      "allowed_domains": [
+        "fctwente.nl",
+        "www.fctwente.nl"
+      ],
+      "article_url_contains": [
+        "/nieuws/"
+      ],
+      "source_scope": "club",
+      "priority": 5,
+      "enabled": true
+    },
+    {
+      "name": "Voetbal International",
+      "url": "https://www.vi.nl/clubs/fc-twente/nieuws",
+      "allowed_domains": [
+        "vi.nl",
+        "www.vi.nl"
+      ],
+      "article_url_contains": [
+        "/nieuws/"
+      ],
+      "source_scope": "fc_twente_page",
+      "priority": 5,
+      "enabled": true
+    },
+    {
+      "name": "VoetbalPrimeur",
+      "url": "https://www.voetbalprimeur.nl/tag/fc-twente",
+      "allowed_domains": [
+        "voetbalprimeur.nl",
+        "www.voetbalprimeur.nl"
+      ],
+      "article_url_contains": [
+        "/nieuws/",
+        "/videos/"
+      ],
+      "source_scope": "fc_twente_page",
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "name": "RTV Oost",
+      "url": "https://www.rtvoost.nl/nieuws",
+      "allowed_domains": [
+        "rtvoost.nl",
+        "www.rtvoost.nl"
+      ],
+      "article_url_contains": [
+        "/nieuws/"
+      ],
+      "source_scope": "general",
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "name": "KNVB",
+      "url": "https://www.knvb.nl/tag/FC-Twente",
+      "allowed_domains": [
+        "knvb.nl",
+        "www.knvb.nl"
+      ],
+      "article_url_contains": [
+        "/nieuws/"
+      ],
+      "source_scope": "fc_twente_page",
+      "priority": 5,
+      "enabled": true
+    },
+    {
+      "name": "NOS Sport",
+      "url": "https://nos.nl/sport",
+      "allowed_domains": [
+        "nos.nl",
+        "www.nos.nl"
+      ],
+      "article_url_contains": [
+        "/artikel/"
+      ],
+      "source_scope": "general",
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "name": "ESPN Nederland",
+      "url": "https://www.espn.nl/voetbal/team/_/id/152/fc-twente",
+      "allowed_domains": [
+        "espn.nl",
+        "www.espn.nl"
+      ],
+      "article_url_contains": [
+        "/voetbal/artikel/"
+      ],
+      "source_scope": "fc_twente_page",
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "name": "UEFA",
+      "url": "https://www.uefa.com/uefaeuropaleague/clubs/52818--twente/",
+      "allowed_domains": [
+        "uefa.com",
+        "www.uefa.com"
+      ],
+      "article_url_contains": [
+        "/news/",
+        "/matches/"
+      ],
+      "source_scope": "fc_twente_page",
+      "priority": 5,
+      "enabled": true
+    }
+  ],
+  "request_timeout_seconds": 15
+}
