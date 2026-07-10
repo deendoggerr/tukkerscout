@@ -42,3 +42,13 @@ Na een echte Git-clone kun je `update_via_github.bat` gebruiken.
 - Eerdere berichten blijven onder **Onthouden berichten** zichtbaar.
 - Optionele X-integratie via de officiële X API.
 - De X Bearer Token wordt uitsluitend lokaal opgeslagen in `data/x_config.json`.
+
+
+## Versie 3.2
+
+- Strikt FC Twente-filter voor alle niet-officiële bronnen.
+- X-posts gaan door exact hetzelfde FC Twente- en personenfilter.
+- Oude irrelevante berichten kunnen met één knop worden opgeruimd.
+- Resultaat per gecontroleerde bron zichtbaar op het dashboard.
+- Betrouwbaarheid en reden van selectie zichtbaar per bericht.
+- Bestaande lokale database wordt automatisch gemigreerd.

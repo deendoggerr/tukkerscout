@@ -2,20 +2,34 @@
 {% block content %}
 <section class="hero">
   <div>
-    <h2>Laatste nieuws</h2>
+    <h2>Laatste FC Twente-nieuws</h2>
     {% if latest %}
-      <p>
-        Laatste update: <strong>{{latest['finished_at']|prettytime}}</strong>
-        · {{latest['new_count']}} nieuw
-      </p>
+      <p>Laatste update: <strong>{{latest['finished_at']|prettytime}}</strong> · {{latest['new_count']}} nieuw</p>
     {% else %}
       <p>Nog niet gecontroleerd. De eerste controle maakt een startbestand.</p>
     {% endif %}
   </div>
-  <button class="primary update-button" onclick="checkNow(this)">
-    Update nieuws
-  </button>
+  <button class="primary update-button" onclick="checkNow(this)">Update nieuws</button>
 </section>
+
+{% if latest_runs %}
+<section class="panel check-report">
+  <h3>Resultaat laatste controle</h3>
+  <div class="run-grid">
+  {% for run in latest_runs %}
+    <div class="run-row">
+      <span class="dot {{'ok' if run['ok'] else 'bad'}}"></span>
+      <strong>{{run['source']}}</strong>
+      {% if run['ok'] %}
+        <span>{{run['new_count']}} nieuw · {{run['relevant_count']}} relevant</span>
+      {% else %}
+        <span class="error">tijdelijk niet bereikbaar</span>
+      {% endif %}
+    </div>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 <form class="filters" method="get">
   <select name="hours">
@@ -26,69 +40,44 @@
   <button>Toepassen</button>
 </form>
 
-<section class="section-title">
-  <h2>Nieuw sinds de laatste update</h2>
-</section>
-
+<section class="section-title"><h2>Nieuw sinds de laatste update</h2></section>
 {% for g in new_groups %}
-{% set a=g.primary %}
+{% set a=g['primary'] %}
 <article class="card new-card">
   <div class="row">
     <span class="pill new-pill">NIEUW</span>
     <span class="pill">{{a['category']}}</span>
-    <span class="pill urgency">Urgentie {{g.urgency}}/5</span>
-    {% if g.source_count>1 %}
-      <span class="pill merged">{{g.source_count}} bronnen</span>
-    {% endif %}
+    <span class="pill urgency">Urgentie {{g['urgency']}}/5</span>
+    <span class="pill">Betrouwbaarheid {{a['reliability']}}/5</span>
+    {% if g['source_count']>1 %}<span class="pill merged">{{g['source_count']}} bronnen</span>{% endif %}
   </div>
   <h3>{{a['title']}}</h3>
-  <div class="meta">
-    {{(a['published_at'] or a['found_at'])|prettytime}}
-  </div>
-  <div class="sources">
-    {% for item in g.items %}
-      <a href="{{item['url']}}" target="_blank">{{item['source']}}</a>
-      {% if not loop.last %} · {% endif %}
-    {% endfor %}
-  </div>
+  <div class="meta">{{(a['published_at'] or a['found_at'])|prettytime}} · gevonden via {{a['match_reason'] or 'FC Twente-filter'}}</div>
+  <div class="sources">{% for item in g['items'] %}<a href="{{item['url']}}" target="_blank">{{item['source']}}</a>{% if not loop.last %} · {% endif %}{% endfor %}</div>
 </article>
 {% else %}
-<div class="empty">
-  {% if latest %}
-    Geen nieuwe berichten sinds de laatste update.
-  {% else %}
-    Klik op Update nieuws om te beginnen.
-  {% endif %}
-</div>
+<div class="empty">{% if latest %}Geen nieuwe berichten sinds de laatste update.{% else %}Klik op Update nieuws om te beginnen.{% endif %}</div>
 {% endfor %}
 
 <section class="section-title memory-heading">
-  <h2>Onthouden berichten · laatste {{hours}} uur</h2>
-  <p>Deze blijven zichtbaar, ook als ze bij een eerdere controle zijn gevonden.</p>
+  <div><h2>Onthouden berichten · laatste {{hours}} uur</h2><p>Alleen berichten die door het strenge FC Twente-filter komen.</p></div>
+  <form method="post" action="{{url_for('cleanup')}}"><button class="secondary">Ruim oude ruis op</button></form>
 </section>
 
 {% for g in all_groups %}
-{% set a=g.primary %}
+{% set a=g['primary'] %}
 <article class="card">
   <div class="row">
     <span class="pill">{{a['category']}}</span>
-    <span class="pill urgency">Urgentie {{g.urgency}}/5</span>
-    {% if g.source_count>1 %}
-      <span class="pill merged">{{g.source_count}} bronnen</span>
-    {% endif %}
+    <span class="pill urgency">Urgentie {{g['urgency']}}/5</span>
+    <span class="pill">Betrouwbaarheid {{a['reliability']}}/5</span>
+    {% if g['source_count']>1 %}<span class="pill merged">{{g['source_count']}} bronnen</span>{% endif %}
   </div>
   <h3>{{a['title']}}</h3>
-  <div class="meta">
-    {{(a['published_at'] or a['found_at'])|prettytime}}
-  </div>
-  <div class="sources">
-    {% for item in g.items %}
-      <a href="{{item['url']}}" target="_blank">{{item['source']}}</a>
-      {% if not loop.last %} · {% endif %}
-    {% endfor %}
-  </div>
+  <div class="meta">{{(a['published_at'] or a['found_at'])|prettytime}} · {{a['match_reason'] or 'FC Twente-filter'}}</div>
+  <div class="sources">{% for item in g['items'] %}<a href="{{item['url']}}" target="_blank">{{item['source']}}</a>{% if not loop.last %} · {% endif %}{% endfor %}</div>
 </article>
 {% else %}
-<div class="empty">Er zijn nog geen onthouden berichten.</div>
+<div class="empty">Er zijn nog geen onthouden FC Twente-berichten.</div>
 {% endfor %}
 {% endblock %}

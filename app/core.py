@@ -22,7 +22,7 @@ X_CONFIG_PATH = DATA_DIR / "x_config.json"
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 Chrome/126 Safari/537.36 TukkerScout/3.1"
+    "AppleWebKit/537.36 Chrome/126 Safari/537.36 TukkerScout/3.2"
 )
 
 CHECK_LOCK = threading.Lock()
@@ -47,6 +47,19 @@ STOPWORDS = {
     "de","het","een","en","van","voor","met","naar","bij","op","in","uit","is","zijn",
     "dat","dit","die","als","om","te","na","over","fc","twente","tukkers","nieuws",
     "krijgt","heeft","komt","kan","wordt","wil","weer","tegen","door"
+}
+
+GENERIC_NOISE_TITLES = {
+    "nieuws", "meer nieuws", "laatste nieuws", "net binnen", "lees meer",
+    "video", "videos", "podcast", "home", "sport", "voetbal", "clubs",
+    "wedstrijden", "stand", "selectie", "programma", "uitslagen"
+}
+
+FOOTBALL_CONTEXT_TERMS = {
+    "transfer", "contract", "blessure", "wedstrijd", "trainer", "speler",
+    "selectie", "eredivisie", "knvb", "uefa", "europa", "oefenduel",
+    "training", "opstelling", "doelpunt", "spits", "keeper", "verdediger",
+    "middenvelder", "club", "technisch directeur", "schorsing"
 }
 
 
@@ -151,6 +164,12 @@ def connect_db():
         conn.execute("ALTER TABLE articles ADD COLUMN published_at TEXT")
     if "check_id" not in article_cols:
         conn.execute("ALTER TABLE articles ADD COLUMN check_id INTEGER")
+    if "match_reason" not in article_cols:
+        conn.execute("ALTER TABLE articles ADD COLUMN match_reason TEXT")
+    if "reliability" not in article_cols:
+        conn.execute("ALTER TABLE articles ADD COLUMN reliability INTEGER NOT NULL DEFAULT 3")
+    if "source_type" not in article_cols:
+        conn.execute("ALTER TABLE articles ADD COLUMN source_type TEXT NOT NULL DEFAULT 'Website'")
 
     run_cols = {row["name"] for row in conn.execute("PRAGMA table_info(source_runs)")}
     if "check_id" not in run_cols:
@@ -237,15 +256,35 @@ def person_terms():
     return sorted(result)
 
 
-def relevant(title, source, config):
-    lowered = title.lower()
+def relevance_details(title, source, config):
+    lowered = normalize_title(title).lower()
+
+    if not lowered or lowered in GENERIC_NOISE_TITLES:
+        return False, "Algemene navigatietekst"
+
     if any(term.lower() in lowered for term in config.get("exclude_terms", [])):
-        return False
-    if source.get("source_scope") in {"club", "fc_twente_page"}:
-        return True
-    if any(term.lower() in lowered for term in config.get("club_terms", [])):
-        return True
-    return any(term in lowered for term in person_terms())
+        return False, "Uitgesloten regionaal onderwerp"
+
+    # Alleen de officiële clubsite mag een titel zonder club- of persoonsnaam leveren.
+    if source.get("source_scope") == "club":
+        return True, "Officiële FC Twente-bron"
+
+    club_matches = [
+        term for term in config.get("club_terms", [])
+        if term.lower() in lowered
+    ]
+    if club_matches:
+        return True, f"FC Twente-term: {club_matches[0]}"
+
+    person_matches = [term for term in person_terms() if term in lowered]
+    if person_matches:
+        return True, f"Persoon: {person_matches[0]}"
+
+    return False, "Geen FC Twente-term of gevolgde persoon"
+
+
+def relevant(title, source, config):
+    return relevance_details(title, source, config)[0]
 
 
 def fetch_site(source, config):
@@ -287,7 +326,8 @@ def fetch_site(source, config):
 
         if len(title) < 8 or len(title) > 260:
             continue
-        if not relevant(title, source, config):
+        is_relevant, match_reason = relevance_details(title, source, config)
+        if not is_relevant:
             continue
 
         category = classify(title)
@@ -302,6 +342,9 @@ def fetch_site(source, config):
             "urgency": urgency(title, category, priority),
             "category": category,
             "fingerprint": fingerprint(title),
+            "match_reason": match_reason,
+            "reliability": int(source.get("reliability", priority)),
+            "source_type": "Website",
         }
 
     return list(found.values())
@@ -365,6 +408,11 @@ def fetch_x_posts(last_check_time):
         if not text:
             continue
 
+        x_source = {"source_scope": "strict"}
+        is_relevant, match_reason = relevance_details(text, x_source, load_config())
+        if not is_relevant:
+            continue
+
         category = classify(text)
         posts.append({
             "source": f"X · @{username}",
@@ -376,6 +424,9 @@ def fetch_x_posts(last_check_time):
             "urgency": urgency(text, category, 4),
             "category": category,
             "fingerprint": fingerprint(text),
+            "match_reason": match_reason,
+            "reliability": 4,
+            "source_type": "X",
         })
 
     return posts, ""
@@ -395,8 +446,9 @@ def save_articles(conn, articles, baseline, check_id):
         try:
             conn.execute("""INSERT INTO articles(
                 source,title,url,found_at,published_at,priority,urgency,
-                category,fingerprint,is_baseline,status,check_id
-            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""", (
+                category,fingerprint,is_baseline,status,check_id,
+                match_reason,reliability,source_type
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
                 article["source"],
                 article["title"],
                 article["url"],
@@ -409,6 +461,9 @@ def save_articles(conn, articles, baseline, check_id):
                 1 if baseline else 0,
                 "Startbestand" if baseline else "Nieuw",
                 check_id,
+                article.get("match_reason", ""),
+                int(article.get("reliability", article.get("priority", 3))),
+                article.get("source_type", "Website"),
             ))
             if not baseline:
                 new_items.append(article)
@@ -453,6 +508,7 @@ def run_check():
 
     try:
         config = load_config()
+        cleanup_irrelevant_articles()
         previous_check = latest_finished_check_time(conn)
 
         for source in config.get("sources", []):
@@ -522,6 +578,43 @@ def run_check():
         conn.close()
         STATUS["running"] = False
         CHECK_LOCK.release()
+
+
+def cleanup_irrelevant_articles():
+    """Remove previously stored noise using the current strict filter."""
+    config = load_config()
+    source_map = {source["name"]: source for source in config.get("sources", [])}
+    conn = connect_db()
+    removed = 0
+    try:
+        rows = conn.execute("SELECT id,source,title FROM articles").fetchall()
+        for row in rows:
+            source_name = row["source"]
+            if source_name.startswith("X ·"):
+                source = {"source_scope": "strict"}
+            else:
+                source = source_map.get(source_name, {"source_scope": "strict"})
+            keep, _ = relevance_details(row["title"], source, config)
+            if not keep:
+                conn.execute("DELETE FROM articles WHERE id=?", (row["id"],))
+                removed += 1
+        conn.commit()
+    finally:
+        conn.close()
+    return removed
+
+
+def latest_check_runs(check_id):
+    if not check_id:
+        return []
+    conn = connect_db()
+    try:
+        return conn.execute(
+            "SELECT * FROM source_runs WHERE check_id=? ORDER BY id",
+            (check_id,),
+        ).fetchall()
+    finally:
+        conn.close()
 
 
 def latest_check():

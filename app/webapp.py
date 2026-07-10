@@ -44,6 +44,7 @@ def dashboard():
         hours=hours,
         status_info=STATUS,
         latest=latest,
+        latest_runs=latest_check_runs(latest_id),
     )
 
 
@@ -153,6 +154,13 @@ def person_delete(person_id):
     return redirect(url_for("persons_page"))
 
 
+@app.post("/cleanup")
+def cleanup():
+    removed = cleanup_irrelevant_articles()
+    flash(f"{removed} irrelevante oude berichten verwijderd.")
+    return redirect(url_for("dashboard"))
+
+
 @app.post("/check")
 def check():
     result = run_check()
@@ -175,7 +183,7 @@ def start():
 
     atexit.register(STOP_EVENT.set)
 
-    print(f"TukkerScout 3.1 draait op http://{host}:{port}")
+    print(f"TukkerScout 3.2 draait op http://{host}:{port}")
     print("Nieuws wordt alleen gecontroleerd wanneer jij op Update nieuws klikt.")
 
     app.run(

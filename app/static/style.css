@@ -53,3 +53,5 @@ input,select,textarea,button{font:inherit}input,select,textarea{padding:9px;bord
 .block-label textarea {
     width: 100%;
 }
+
+.check-report h3{margin-top:0}.run-grid{display:grid;gap:9px}.run-row{display:grid;grid-template-columns:14px minmax(150px,1fr) minmax(180px,2fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eee}.secondary{background:white;border:1px solid #d1d5db;border-radius:8px;padding:9px 12px;cursor:pointer}.memory-heading{display:flex;justify-content:space-between;align-items:end;gap:15px}.memory-heading form{margin:0}@media(max-width:700px){.run-row{grid-template-columns:14px 1fr}.run-row span:last-child{grid-column:2}.memory-heading{align-items:flex-start}}
